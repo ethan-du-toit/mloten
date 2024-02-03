@@ -1,0 +1,79 @@
+; In this pseudocode,
+; all arrays will be 0-based.
+; Adding 0x before a number means that it is in hexadecimal.
+; Comments begin with ;
+; _Underscores_ around a name stands in for underlining.
+; It means that it is a subprocedure.
+
+BEGIN Main (filename)
+      Open filename in read mode with name "file"
+      Initialise SDL ; The display library
+      Set the action of receiving the interrupt signal to exitting the program
+      _Main-Loop (file)_
+END Main
+
+BEGIN Main-Loop (file)
+      Let RAM be an Array of size 5 megabytes of unsigned 8-bit integers.
+      Create the window.
+      Create the renderer for that window.
+      Create the surface that holds the pixels.
+      Let Register-File be an Array of size 32 of 32-bit integers.
+      Register-File(2) = 0x4407ff ; set up the stack pointer
+      Copy `file` into `RAM`.
+      Close `file`.
+      Set the region in `RAM` from index 0x440000 to 0x44efff to 0.
+      Set the region in `RAM` from index 0x467000 to 0x47ffff to 0.
+      Let Reds be an Array for size 8 of unsigned 8-bit integers.
+      Let Greens be an Array for size 8 of unsigned 8-bit integers.
+      Let Blues be an Array for size 8 of unsigned 8-bit integers.
+      Reds = { 0, 36, 73, 109, 146, 182, 219, 255 }
+      Greens = { 0, 36, 73, 109, 146, 182, 219, 255 }
+      Blues = { 0, 85, 170, 255 }
+      Current-Color = 0
+      FOR i IN Reds DO
+      	  FOR j IN Greens DO
+	      FOR k IN Blues DO
+	      	  RAM(0x461c00 + Current-Color * 3) = i    ; Setting the palette
+	      	  RAM(0x461c00 + Current-Color * 3 + 1) = j
+	      	  RAM(0x461c00 + Current-Color * 3 + 2) = k
+		  Current-Color = Current-Color + 1
+	      NEXT k
+	  NEXT j
+      NEXT i
+      Store 0x1808 in the 4 bytes at 0x441400 in RAM. ; Machine status register
+      Store 0x102 in the 4 bytes at 0x441414 in RAM. ;Vector interrupts to 0x100
+      Store 0x888 in the 4 bytes at 0x441410 in RAM. ; Enable all interrupts
+      Store -1 in the 4 bytes at 0x443708 in RAM. ; Timer to interrupt
+      Store -1 in the 4 bytes at 0x44370c in RAM.;Timer to interrupt (high bits)
+      Time-To-Display = 0
+      Scanline = 0
+      Time-To-PPU = 0
+      Set Time-Of-Next-Frame to the current time plus 16 2/3 milliseconds.
+      Program-Counter = 0x1000 - 4
+      WHILE true DO
+      	    Time-To-Display = Time-To-Display + 1
+	    Time-To-PPU = Time-To-PPU + 1
+
+	    _CPU-Tick_ (Program-Counter, RAM, Register-File)
+	    ; Runs the CPU for exactly one instruction.
+	    
+	    IF Scanline < 240 AND Time-To-PPU = 364 THEN
+	       _Run-PPU_ (RAM, Scanline)
+	       ; Runs the PPU (Picture Processing Unit) for exactly one scanline
+	       Scanline = Scanline + 1
+	       If Scanline = 240 THEN
+	       	  Scanline = 0
+		  Get all events in SDL.
+		  Update status of inputs.
+		  _Queue Interrupt_ of type 0x800 (VBLANK interrupt).
+	       ENDIF
+	       Time-To-PPU = 0
+	    ENDIF
+
+	    IF Time-To-Display = 174763 THEN
+	       _Display (Renderer, Surface, RAM)_
+	       Time-To-Display = 0
+	       Wait until Time-Of-Next_Frame
+	    ENDIF
+      ENDWHILE
+END Main-Loop	      

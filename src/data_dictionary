@@ -1,0 +1,215 @@
+In this document, the prefix "0b" to a number means that that number is
+represented in binary, and the prefix "0x" means that it is represented in
+hexadecimal.
+
+Data Dictionary
+Name		Data Type	Field Size (bytes)	Description	Example
+time_to_disp	Integer		4     	   		How long it has 12543
+							been since the
+							last screen
+							display
+time_to_ppu	Integer		4			How long it has	232
+							been since the
+							last scanline
+							of sprites and
+							background has
+							been processed
+pc		Unsigned	4			The program	15830
+		Integer					counter:
+							address to the
+							instruction
+							that the
+							emulated CPU
+							will execute
+scanline	Integer		4			The scanline	123
+							that the PPU
+							will process
+							when
+							time_to_ppu
+							reaches its
+							limit
+mip		Integer		4			Signals whether	1
+		       					an interrupt
+							is pending,
+							and if so, what
+							type it is
+mie		Integer 	4			Signals whether	0x888
+							interrupts are
+							enabled, and if
+							so, what types
+							are enabled
+mtvec		Integer		4			Signals which	0x102
+							location in
+							memory
+							interrupts
+							should point
+							the program
+							counter to;
+							that is, where
+							interrupts are
+							vectored.
+mcause		Integer		4			Signals why the	0
+							last interrupt
+							was caused
+cycles		Unsigned	4			Holds amount	5673
+		Integer					of cycles that
+							have passed
+							since the "CPU"
+							booted up.
+cyclesh		Unsigned	4			The overflow	2
+		Integer					for `cycles`,
+							is incremented
+							each time `cycles`
+							overflows.
+timecmp		Unsigned	4			The lower 32	10512
+		Integer					bits of the time
+							that has been set
+							to produce an
+							interrupt
+							at.
+timecmph	Unsigned	4			The upper 32	1
+		Integer					bits of that
+							time.
+---
+Data Dictionary (Game)
+
+Name		Data Type	Field Size (bytes)	Description	Example
+menuind		Unsigned Char	1     	   		Holds the index	3
+			 				of the menu
+							item that is
+							selected
+difficulty	Unsigned Char	1			Holds the	1
+			 				current
+							difficulty
+game		Boolean		1			Holds whether	false
+							or not the game
+							is in the
+							game-proper
+inmenu		Boolean		1			Holds whether	true
+							the game is in
+							the menu
+deaths		Unsigned Short 	2			# of deaths	43
+died		Boolean	 	1			Holds whether	true
+							you just died
+done		Boolean		1			Holds whether	false
+							the level is
+							over
+next_level	Boolean		1			Holds index	4
+							of the current
+							level
+ji6		Boolean		1			Holds whether	true
+							button 6 was
+							recently pressed
+
+---
+
+Test Data Table
+
+This section of the table holds the tests for instruction decoding in the CPU.
+Instruction decoding is how a CPU takes each instruction in the raw binary code
+produced by e.g. a compiler and "decodes" it, figuring out what to do with it.
+
+
+
+Test Data:
+0b10110010110101011010100100000011
+An "I-format" instruction; this format is used for instructions requiring a large
+immediate operand. "I-format" means immediate format.
+
+Expected Output:
+Opcode = 0b0000011
+Source Register 1 = 0b01011
+Source Register 2 N/A
+Immediate Operand = 0b11111111111111111111101100101101
+3-bit Function Code = 0b010
+Destination Register = 0b10010
+7-bit Function Code N/A
+
+Output:
+The same as expected output.
+
+Test Data:
+0b00110001010100101111100110110011
+An "R-format" instruction; this format is used for instructions that do not have
+an immediate operand. "R-format" means register format.
+
+Expected Output:
+Opcode = 0b0110011
+Source Register 1 = 0b00101
+Source Register 2 = 0b10101
+Immediate Operand N/A
+3-bit Function Code = 0b111
+Destination Register = 0b10011
+7-bit Function Code = 0b11000
+
+Output:
+The same as expected output.
+
+Test Data:
+0b10011010011010110101011010100011
+An "S-format" instruction; this format is used for instructions that store data
+in memory. "S-format" means store format.
+
+Expected Output:
+Opcode = 0b0100011
+Source Register 1 = 0b10110
+Source Register 2 = 0b00110
+Immediate Operand = 0b11111111111111111111100110101101
+3-bit Function Code = 0b101
+Destination Register N/A
+7-bit Function Code N/A
+
+Output:
+The same as expected output.
+
+Test Data:
+0b10101100001110110001101111100011
+A "B-format" instruction; this format is used for instructions that conditionally
+branch to other locations in memory. "B-format" means branch format.
+
+Expected Output:
+Opcode = 0b1100011
+Source Register 1 = 0b10110
+Source Register 2 = 0b00011
+Immediate Operand = 0b11111111111111111111101011010110
+3-bit Function Code = 0b001
+Destination Register N/A
+7-bit Function Code N/A
+
+Output:
+The same as expected output.
+
+Test Data:
+0b10111011100110011101011000110111
+A "U-format" instruction; this format is used for instructions that load the
+upper 20 bits of the immediate operand to some place. "U-format" means
+upper-immediate format.
+
+Expected Output:
+Opcode = 0b0110111
+Source Register 1 N/A
+Source Register 2 N/A
+Immediate Operand = 0b10111011100110011101000000000000
+3-bit Function Code N/A
+Destination Register = 0b01100
+7-bit Function Code N/A
+
+Output:
+The same as expected output.
+
+Test Data:
+0b11011001010110010001001001101111
+A "J-format" instruction; this format is used for instructions that jump to a
+place in memory relative to the program counter. "J-format" means jump format.
+
+Expected Output:
+Opcode = 0b1101111
+Source Register 1 N/A
+Source Register 2 N/A
+Immediate Operand = 0b11111111111110010001110110010100
+3-bit Function Code N/A
+Destination Register = 0b00100
+7-bit Function Code N/A
+
+Output:
+The same as expected output.
