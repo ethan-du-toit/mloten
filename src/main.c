@@ -217,6 +217,10 @@ static inline void ml(FILE* restrict f)  {
 }
 
 int main (int argc, char* argv[]) {
+  if (argc != 2) {
+    printf("Usage: %s <path to game ROM file>\n", argv[0]);
+    return -1;
+  }
   FILE* f = fopen(argv[1], "r");
 #ifndef NODISPLAY  
   SDL_Init(SDL_INIT_VIDEO); 
